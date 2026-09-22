@@ -1,0 +1,46 @@
+[package]
+name = "workspace-validator"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.87"
+authors = ["Miguel Eduardo Senna Moroni"]
+license = "MIT"
+description = "Declarative, shell-free validation graphs for heterogeneous workspaces"
+documentation = "https://docs.rs/workspace-validator"
+readme = "README.md"
+repository = "https://github.com/migmoroni/veterinary-clinic"
+keywords = ["validation", "workspace", "monorepo", "cli", "automation"]
+categories = ["command-line-utilities", "development-tools", "development-tools::testing"]
+include = [
+  "/src/**",
+  "/examples/**",
+  "/schemas/**",
+  "/README.md",
+  "/CONFIG_DESIGN.md",
+  "/CHANGELOG.md",
+  "/SECURITY.md",
+  "/LICENSE",
+]
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+console = "0.16"
+ctrlc = "3.5"
+indicatif = "0.18"
+schemars = { version = "1.2", features = ["derive"] }
+semver = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10.9"
+thiserror = "2.0"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_System_JobObjects",
+  "Win32_System_Threading",
+] }
+
+[dev-dependencies]
+tempfile = "3.27"

@@ -1,0 +1,136 @@
+{
+  "$schema": "../../../schemas/config.schema.json",
+  "schemaVersion": 6,
+  "workspaceRoot": "..",
+  "defaultGroup": "outcomes.all",
+  "outputLimitBytes": 1048576,
+  "tools": [
+    {
+      "id": "cargo",
+      "program": "cargo",
+      "requiresTools": [],
+      "versionArgs": ["--version"],
+      "versionParser": "firstSemver"
+    },
+    {
+      "id": "intentionally-unavailable",
+      "program": "workspace-validator-intentionally-unavailable",
+      "requiresTools": [],
+      "versionArgs": ["--version"],
+      "versionParser": "firstSemver"
+    }
+  ],
+  "checks": [
+    {
+      "id": "outcome.pass",
+      "label": "Passing code",
+      "description": "Runs a passing Rust test fixture.",
+      "toolId": "cargo",
+      "args": ["test", "--quiet", "--locked", "{target}"],
+      "requiresTools": [],
+      "timeoutSeconds": 120
+    },
+    {
+      "id": "outcome.fail",
+      "label": "Failing code",
+      "description": "Runs an intentionally failing Rust test fixture.",
+      "toolId": "cargo",
+      "args": ["test", "--quiet", "--locked", "{target}"],
+      "requiresTools": [],
+      "timeoutSeconds": 120
+    },
+    {
+      "id": "outcome.skipped",
+      "label": "Skipped after failure",
+      "description": "Demonstrates a check skipped because its dependency did not pass.",
+      "toolId": "cargo",
+      "args": ["test", "--quiet", "--locked", "{target}"],
+      "requiresTools": [],
+      "timeoutSeconds": 120
+    },
+    {
+      "id": "outcome.blocked",
+      "label": "Blocked by unavailable tool",
+      "description": "Demonstrates a check blocked during prerequisite validation.",
+      "toolId": "intentionally-unavailable",
+      "args": ["run"],
+      "requiresTools": [],
+      "timeoutSeconds": 120
+    }
+  ],
+  "suites": [
+    {
+      "id": "outcomes.pass.suite",
+      "label": "Passing outcome",
+      "description": "Contains code that passes validation.",
+      "checks": [
+        {
+          "checkId": "outcome.pass",
+          "parameters": {
+            "target": ["-p", "workspace-validator-pass-fixture"]
+          },
+          "dependsOn": []
+        }
+      ]
+    },
+    {
+      "id": "outcomes.fail.suite",
+      "label": "Failure and skip outcomes",
+      "description": "Contains a failure and its skipped dependent check.",
+      "checks": [
+        {
+          "checkId": "outcome.fail",
+          "parameters": {
+            "target": ["-p", "workspace-validator-fail-fixture"]
+          },
+          "dependsOn": []
+        },
+        {
+          "checkId": "outcome.skipped",
+          "parameters": {
+            "target": ["-p", "workspace-validator-pass-fixture"]
+          },
+          "dependsOn": ["outcome.fail"]
+        }
+      ]
+    },
+    {
+      "id": "outcomes.blocked.suite",
+      "label": "Blocked outcome",
+      "description": "Contains a check whose required tool is unavailable.",
+      "checks": [
+        { "checkId": "outcome.blocked", "dependsOn": [] }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": "outcomes.pass",
+      "label": "Passing example",
+      "description": "Displays a successful validation result.",
+      "members": [{ "kind": "suite", "id": "outcomes.pass.suite" }]
+    },
+    {
+      "id": "outcomes.fail",
+      "label": "Failure example",
+      "description": "Displays failure and skipped validation results.",
+      "members": [{ "kind": "suite", "id": "outcomes.fail.suite" }]
+    },
+    {
+      "id": "outcomes.blocked",
+      "label": "Blocked example",
+      "description": "Displays a blocked validation result.",
+      "members": [{ "kind": "suite", "id": "outcomes.blocked.suite" }]
+    },
+    {
+      "id": "outcomes.all",
+      "label": "All outcome examples",
+      "description": "Displays pass, fail, skipped, and blocked results together.",
+      "members": [
+        { "kind": "group", "id": "outcomes.pass" },
+        { "kind": "group", "id": "outcomes.fail" },
+        { "kind": "group", "id": "outcomes.blocked" }
+      ]
+    }
+  ]
+}

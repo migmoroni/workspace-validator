@@ -1,0 +1,412 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Config",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "description": "Optional local JSON Schema reference used by editors.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "checks": {
+      "description": "Reusable validation operations.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CheckConfig"
+      }
+    },
+    "defaultGroup": {
+      "description": "Group selected when the CLI receives no explicit target.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+    },
+    "groups": {
+      "description": "Ordered compositions of suites and nested groups.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GroupConfig"
+      }
+    },
+    "outputLimitBytes": {
+      "description": "Maximum captured bytes for each standard output stream.",
+      "type": "integer",
+      "format": "uint",
+      "maximum": 16777216,
+      "minimum": 4096
+    },
+    "repository": {
+      "description": "Optional repository-integrity provider.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RepositoryConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schemaVersion": {
+      "description": "Version of the configuration contract.",
+      "type": "integer",
+      "format": "uint32",
+      "maximum": 6,
+      "minimum": 6
+    },
+    "suites": {
+      "description": "Contextual check compositions.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SuiteConfig"
+      }
+    },
+    "tools": {
+      "description": "Executable tools available to checks and repository providers.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ToolConfig"
+      }
+    },
+    "workspaceRoot": {
+      "description": "Path from the configuration directory to the workspace root.",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "workspaceRoot",
+    "defaultGroup",
+    "outputLimitBytes",
+    "tools",
+    "checks",
+    "suites",
+    "groups"
+  ],
+  "$defs": {
+    "CheckConfig": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "Argument template passed directly to the executable without a shell.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\u0000]*$"
+          }
+        },
+        "description": {
+          "description": "Human-readable explanation of the validation performed.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "id": {
+          "description": "Stable identifier used by suites and reports.",
+          "type": "string",
+          "maxLength": 96,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+        },
+        "label": {
+          "description": "Human-readable check name.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "requiresTools": {
+          "description": "Additional tools required by this check.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+          }
+        },
+        "timeoutSeconds": {
+          "description": "Maximum execution time in seconds.",
+          "type": "integer",
+          "format": "uint64",
+          "maximum": 86400,
+          "minimum": 1
+        },
+        "toolId": {
+          "description": "Tool whose executable runs the check.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "description",
+        "toolId",
+        "args",
+        "requiresTools",
+        "timeoutSeconds"
+      ]
+    },
+    "GroupConfig": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "description": "Human-readable explanation of the grouped validation context.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "id": {
+          "description": "Stable identifier referenced by groups and the CLI.",
+          "type": "string",
+          "maxLength": 96,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+        },
+        "label": {
+          "description": "Human-readable group name.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "members": {
+          "description": "Ordered group or suite references.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GroupMemberRef"
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "description",
+        "members"
+      ]
+    },
+    "GroupMemberRef": {
+      "oneOf": [
+        {
+          "description": "Reference to another group.",
+          "type": "object",
+          "properties": {
+            "id": {
+              "description": "Referenced group identifier.",
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+            },
+            "kind": {
+              "type": "string",
+              "const": "group"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id"
+          ]
+        },
+        {
+          "description": "Reference to an executable suite.",
+          "type": "object",
+          "properties": {
+            "id": {
+              "description": "Referenced suite identifier.",
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+            },
+            "kind": {
+              "type": "string",
+              "const": "suite"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id"
+          ]
+        }
+      ]
+    },
+    "ParameterValue": {
+      "anyOf": [
+        {
+          "description": "Replaces one placeholder with one argument.",
+          "type": "string"
+        },
+        {
+          "description": "Expands one placeholder into multiple consecutive arguments.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "RepositoryConfig": {
+      "type": "object",
+      "properties": {
+        "detectMutations": {
+          "description": "Whether Git-visible mutations make repository integrity fail.",
+          "type": "boolean"
+        },
+        "provider": {
+          "description": "Provider used to capture and compare repository state.",
+          "$ref": "#/$defs/RepositoryProvider"
+        },
+        "toolId": {
+          "description": "Declared tool that implements the provider command.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "toolId",
+        "detectMutations"
+      ]
+    },
+    "RepositoryProvider": {
+      "type": "string",
+      "enum": [
+        "git"
+      ]
+    },
+    "SuiteCheckConfig": {
+      "type": "object",
+      "properties": {
+        "checkId": {
+          "description": "Reusable check selected for this invocation.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+        },
+        "dependsOn": {
+          "description": "Earlier checks in the same suite required by this invocation.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+          }
+        },
+        "parameters": {
+          "description": "Values bound to placeholders declared in the check arguments.",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/ParameterValue"
+          },
+          "default": {}
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "checkId",
+        "dependsOn"
+      ]
+    },
+    "SuiteConfig": {
+      "type": "object",
+      "properties": {
+        "checks": {
+          "description": "Ordered check invocations executed by the suite.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SuiteCheckConfig"
+          },
+          "minItems": 1
+        },
+        "description": {
+          "description": "Human-readable explanation of the suite scope.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "id": {
+          "description": "Stable identifier referenced by groups and the CLI.",
+          "type": "string",
+          "maxLength": 96,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+        },
+        "label": {
+          "description": "Human-readable suite name.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "workingDirectory": {
+          "description": "Optional directory below the workspace root used for every check.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "description",
+        "checks"
+      ]
+    },
+    "ToolConfig": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "Stable identifier referenced by checks and other tools.",
+          "type": "string",
+          "maxLength": 96,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+        },
+        "program": {
+          "description": "Executable name or path passed directly to the operating system.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\u0000]*$"
+        },
+        "requiresTools": {
+          "description": "Tool prerequisites that must pass before this tool is checked.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+          }
+        },
+        "versionArgs": {
+          "description": "Arguments used to query the installed version.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\u0000]*$"
+          }
+        },
+        "versionParser": {
+          "description": "Parser applied to version-command output.",
+          "$ref": "#/$defs/VersionParser"
+        },
+        "versionRequirement": {
+          "description": "Optional semantic-version requirement for the detected version.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "program",
+        "requiresTools",
+        "versionArgs",
+        "versionParser"
+      ]
+    },
+    "VersionParser": {
+      "type": "string",
+      "enum": [
+        "firstSemver"
+      ]
+    }
+  }
+}

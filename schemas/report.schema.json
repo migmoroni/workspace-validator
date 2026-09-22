@@ -1,0 +1,630 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ValidationReport",
+  "type": "object",
+  "properties": {
+    "checks": {
+      "description": "Concrete check results in deterministic execution order.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CheckExecutionResult"
+      }
+    },
+    "durationMs": {
+      "description": "Total validation duration in milliseconds.",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0
+    },
+    "groups": {
+      "description": "Aggregate results for reached groups in planning order.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/GroupResult"
+      }
+    },
+    "repository": {
+      "description": "Repository integrity details when configured.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RepositoryReport"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schemaVersion": {
+      "description": "Version of the report contract.",
+      "type": "integer",
+      "format": "uint32",
+      "maximum": 4,
+      "minimum": 4
+    },
+    "selection": {
+      "description": "User selection that produced this report.",
+      "$ref": "#/$defs/ValidationSelection"
+    },
+    "startedAtUnixMs": {
+      "description": "Unix timestamp in milliseconds captured at validation start.",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0
+    },
+    "suites": {
+      "description": "Aggregate results for reached suites in planning order.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SuiteResult"
+      }
+    },
+    "summary": {
+      "description": "Aggregate result across concrete checks and repository integrity.",
+      "$ref": "#/$defs/Summary"
+    },
+    "tools": {
+      "description": "Preflight results for every required tool.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ToolResult"
+      }
+    },
+    "workspaceRoot": {
+      "description": "Portable workspace marker, always `.` in version 4.",
+      "const": "."
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "selection",
+    "workspaceRoot",
+    "startedAtUnixMs",
+    "durationMs",
+    "tools",
+    "groups",
+    "suites",
+    "checks",
+    "summary"
+  ],
+  "$defs": {
+    "CheckContext": {
+      "oneOf": [
+        {
+          "description": "Check invocation owned by a suite.",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "suite"
+            },
+            "suiteId": {
+              "description": "Identifier of the owning suite.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "suiteId"
+          ]
+        },
+        {
+          "description": "Check invoked directly at the workspace root.",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "direct"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        }
+      ]
+    },
+    "CheckExecutionResult": {
+      "type": "object",
+      "properties": {
+        "argv": {
+          "description": "Complete executed command, including the executable.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "checkId": {
+          "description": "Stable check identifier from the configuration.",
+          "type": "string"
+        },
+        "context": {
+          "description": "Context that distinguishes direct and suite-bound invocations.",
+          "$ref": "#/$defs/CheckContext"
+        },
+        "description": {
+          "description": "Human-readable check description captured at execution time.",
+          "type": "string"
+        },
+        "durationMs": {
+          "description": "Elapsed execution time in milliseconds.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "exitCode": {
+          "description": "Process exit code when the operating system reports one.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "label": {
+          "description": "Human-readable check name captured at execution time.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Diagnostic for failure, blocking, or omission when available.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "description": "Final operation status.",
+          "$ref": "#/$defs/Status"
+        },
+        "stderr": {
+          "description": "Captured standard error, omitted from JSON when empty.",
+          "type": "string"
+        },
+        "stderrTruncated": {
+          "description": "Whether captured standard error exceeded the configured byte limit.",
+          "type": "boolean"
+        },
+        "stdout": {
+          "description": "Captured standard output, omitted from JSON when empty.",
+          "type": "string"
+        },
+        "stdoutTruncated": {
+          "description": "Whether captured standard output exceeded the configured byte limit.",
+          "type": "boolean"
+        },
+        "timedOut": {
+          "description": "Whether timeout initiated process-tree termination.",
+          "type": "boolean"
+        },
+        "timeoutSeconds": {
+          "description": "Configured timeout in seconds.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "checkId",
+        "context",
+        "label",
+        "description",
+        "argv",
+        "status",
+        "durationMs",
+        "timeoutSeconds",
+        "timedOut",
+        "stdoutTruncated",
+        "stderrTruncated",
+        "stdout",
+        "stderr"
+      ]
+    },
+    "GroupMemberRef": {
+      "oneOf": [
+        {
+          "description": "Reference to another group.",
+          "type": "object",
+          "properties": {
+            "id": {
+              "description": "Referenced group identifier.",
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+            },
+            "kind": {
+              "type": "string",
+              "const": "group"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id"
+          ]
+        },
+        {
+          "description": "Reference to an executable suite.",
+          "type": "object",
+          "properties": {
+            "id": {
+              "description": "Referenced suite identifier.",
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$"
+            },
+            "kind": {
+              "type": "string",
+              "const": "suite"
+            }
+          },
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id"
+          ]
+        }
+      ]
+    },
+    "GroupResult": {
+      "type": "object",
+      "properties": {
+        "checkDurationMs": {
+          "description": "Sum of distinct descendant check durations in milliseconds.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "description": {
+          "description": "Human-readable group description.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable group identifier.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Human-readable group name.",
+          "type": "string"
+        },
+        "level": {
+          "description": "Derived hierarchy level, where leaf groups start at one.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "members": {
+          "description": "Ordered references that compose the group.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/GroupMemberRef"
+          }
+        },
+        "summary": {
+          "description": "Aggregate outcome of distinct descendant checks.",
+          "$ref": "#/$defs/Summary"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "description",
+        "level",
+        "checkDurationMs",
+        "summary",
+        "members"
+      ]
+    },
+    "OverallResult": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "blocked"
+      ]
+    },
+    "RepositoryIntegrityResult": {
+      "type": "object",
+      "properties": {
+        "durationMs": {
+          "description": "Total repository capture and comparison time in milliseconds.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "id": {
+          "description": "Synthetic result identifier.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Human-readable integrity-check name.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Diagnostic when integrity does not pass.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "description": "Outcome of repository capture and comparison.",
+          "$ref": "#/$defs/Status"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "status",
+        "durationMs"
+      ]
+    },
+    "RepositoryProvider": {
+      "type": "string",
+      "enum": [
+        "git"
+      ]
+    },
+    "RepositoryReport": {
+      "type": "object",
+      "properties": {
+        "after": {
+          "description": "Sorted repository entries captured after checks, when available.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "before": {
+          "description": "Sorted repository entries captured before checks, when available.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "changed": {
+          "description": "Entries whose visible content changed, when comparison succeeds.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "integrity": {
+          "description": "Counted synthetic integrity result.",
+          "$ref": "#/$defs/RepositoryIntegrityResult"
+        },
+        "introduced": {
+          "description": "Entries introduced by validation, when comparison succeeds.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "provider": {
+          "description": "Repository provider used for this report.",
+          "$ref": "#/$defs/RepositoryProvider"
+        },
+        "removed": {
+          "description": "Entries removed by validation, when comparison succeeds.",
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "provider",
+        "integrity"
+      ]
+    },
+    "Status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "blocked",
+        "skipped"
+      ]
+    },
+    "SuiteResult": {
+      "type": "object",
+      "properties": {
+        "checkDurationMs": {
+          "description": "Sum of concrete check durations in milliseconds.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "checkIds": {
+          "description": "Ordered check identifiers belonging to the suite.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "description": "Human-readable suite description.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable suite identifier.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Human-readable suite name.",
+          "type": "string"
+        },
+        "summary": {
+          "description": "Aggregate outcome of the suite's counted checks.",
+          "$ref": "#/$defs/Summary"
+        },
+        "workingDirectory": {
+          "description": "Portable path relative to the workspace root.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "description",
+        "workingDirectory",
+        "checkDurationMs",
+        "summary",
+        "checkIds"
+      ]
+    },
+    "Summary": {
+      "type": "object",
+      "properties": {
+        "blocked": {
+          "description": "Number of blocked counted operations.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "fail": {
+          "description": "Number of failing counted operations.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "pass": {
+          "description": "Number of passing counted operations.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        },
+        "result": {
+          "description": "Aggregate result derived from the counts.",
+          "$ref": "#/$defs/OverallResult"
+        },
+        "skipped": {
+          "description": "Number of skipped counted operations.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "pass",
+        "fail",
+        "blocked",
+        "skipped",
+        "result"
+      ]
+    },
+    "ToolResult": {
+      "type": "object",
+      "properties": {
+        "argv": {
+          "description": "Complete version-query command, including the executable.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "id": {
+          "description": "Stable tool identifier from the configuration.",
+          "type": "string"
+        },
+        "program": {
+          "description": "Executable name or path requested from the operating system.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "Diagnostic when discovery or validation does not pass.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "description": "Outcome of tool discovery and version validation.",
+          "$ref": "#/$defs/Status"
+        },
+        "version": {
+          "description": "Parsed semantic version when discovery succeeds.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "program",
+        "argv",
+        "status"
+      ]
+    },
+    "ValidationSelection": {
+      "oneOf": [
+        {
+          "description": "A group and every member reachable from it.",
+          "type": "object",
+          "properties": {
+            "id": {
+              "description": "Selected group identifier.",
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "const": "group"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ]
+        },
+        {
+          "description": "One suite and its contextual check invocations.",
+          "type": "object",
+          "properties": {
+            "id": {
+              "description": "Selected suite identifier.",
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "const": "suite"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ]
+        },
+        {
+          "description": "One direct check at the workspace root.",
+          "type": "object",
+          "properties": {
+            "id": {
+              "description": "Selected check identifier.",
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "const": "check"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ]
+        }
+      ]
+    }
+  }
+}
