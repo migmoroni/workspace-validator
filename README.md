@@ -250,13 +250,11 @@ The crate is distributed under the MIT License.
 From the source repository, replace the installed binary in examples with:
 
 ```sh
-cargo run --locked -p workspace-validator -- <command>
+cargo run --locked -- <command>
 ```
 
-Dependency security checks intentionally distinguish their scopes. CI reports
-advisories from the monorepo's complete root `Cargo.lock` without presenting
-that result as exclusive to this crate. The generated package lockfile is the
-blocking RustSec gate for the publishable dependency graph. `cargo deny` applies
-[`deny.toml`](https://github.com/migmoroni/veterinary-clinic/blob/main/tools/workspace-validator/deny.toml)
-to the dependency graph rooted at this crate. The CI workflow installs pinned
-releases of both tools and never publishes a package.
+CI treats the committed `Cargo.lock` as the reproducible dependency graph for
+the CLI. `cargo audit` rejects known RustSec advisories, while `cargo deny`
+applies the license, source, and duplicate-dependency policy in
+[`deny.toml`](deny.toml). The package job verifies the isolated crate archive
+and smoke-tests the packaged binary. The CI workflow never publishes a package.

@@ -8,7 +8,7 @@ updated when another release line becomes supported.
 ## Reporting A Vulnerability
 
 Report vulnerabilities privately through
-[GitHub Security Advisories](https://github.com/migmoroni/veterinary-clinic/security/advisories/new).
+[GitHub Security Advisories](https://github.com/migmoroni/workspace-validator/security/advisories/new).
 Do not open a public issue before coordinated disclosure.
 
 Include, when available:
