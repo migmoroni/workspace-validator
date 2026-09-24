@@ -95,6 +95,36 @@ Use `--format=json` when a machine-readable report is required:
 workspace-validator validate --format=json
 ```
 
+## Agent Skill
+
+The source distribution includes one versioned, agent-neutral skill at
+[`skills/workspace-validator`](skills/workspace-validator). Its `SKILL.md` is a
+small router that checks CLI compatibility and loads only the requested
+workflow reference: execution, triage, configuration, or coverage auditing.
+
+Copy the complete directory from the source release that matches the installed
+CLI into the skill directory recognized by the consumer workspace. For an
+agent that discovers workspace skills under `.agents/skills`, run this from a
+checkout of `workspace-validator`:
+
+```sh
+workspace_root=/path/to/workspace
+mkdir -p "$workspace_root/.agents/skills"
+cp -R skills/workspace-validator "$workspace_root/.agents/skills/"
+```
+
+The source path is not tied to a specific model or agent. Use a different
+destination when the consumer uses another skill discovery convention.
+Installing the Cargo binary does not register the skill automatically.
+
+Copy the whole directory so `manifest.json` and the `references` remain on the
+same version. Compare `workspace-validator --version` with the source crate
+version recorded at the top of the copied skill. The router warns about a stale
+but compatible copy and stops workflows outside its declared compatibility
+range. Replace the copied directory from the matching release to update it;
+keep project-specific commands and approval rules in a separate local skill or
+agent policy.
+
 ## Configuration Model
 
 The version 6 configuration has four ownership layers:

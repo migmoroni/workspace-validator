@@ -7,6 +7,11 @@ and the project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- Versioned agent skill bundle for safe validation execution, report triage,
+  configuration, and coverage auditing with progressive disclosure.
+
 ## [0.1.0]
 
 ### Added
